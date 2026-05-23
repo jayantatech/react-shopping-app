@@ -79,7 +79,7 @@ export default function App() {
               color: "#111827",
             }}
           >
-            Discover Amazing Products
+            Discover Amazing Products by jayanta and he is good
           </h2>
 
           <p
