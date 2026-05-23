@@ -1,0 +1,31 @@
+# dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# production build output
+dist
+
+# environment files (optional - usually better to use build args for different environments)
+.env
+.env.local
+.env.*.local
+
+# testing coverage & logs
+coverage
+logs
+*.log
+
+# version control
+.git
+.gitignore
+
+# docker specific
+Dockerfile
+.dockerignore
+
+# misc
+README.md
+LICENSE
