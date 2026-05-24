@@ -40,7 +40,9 @@ pipeline {
         stage("Deploy to DEV") {
 
             when {
-                branch "dev"
+                expression {
+                    env.BRANCH_NAME == "dev"
+                }
             }
 
             steps {
