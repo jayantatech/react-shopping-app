@@ -1,0 +1,35 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  react-app:
+    image: "${IMAGE_NAME}:latest"
+    container_name: "${CONTAINER_NAME}"
+    ports:
+      - "${PORT}"
+    networks:
+      - default
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Optional: Add tests service
+  react-tests:
+    image: "${IMAGE_NAME}:latest"
+    container_name: "${CONTAINER_NAME}-tests"
+    networks:
+      - default
+    depends_on:
+      - react-app
+    entrypoint: ["npm", "test", "--", "--watchAll=false", "--passWithNoTests"]
+    environment:
+      - CI=true
+
+networks:
+  default:
+    name: "${NETWORK}"
+    external: true
