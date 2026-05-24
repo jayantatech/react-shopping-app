@@ -1,5 +1,4 @@
 # docker-compose.yml
-version: '3.8'
 
 services:
   react-app:
@@ -8,7 +7,7 @@ services:
     ports:
       - "${PORT}"
     networks:
-      - default
+      - app_network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
@@ -22,7 +21,7 @@ services:
     image: "${IMAGE_NAME}:latest"
     container_name: "${CONTAINER_NAME}-tests"
     networks:
-      - default
+      - app_network
     depends_on:
       - react-app
     entrypoint: ["npm", "test", "--", "--watchAll=false", "--passWithNoTests"]
@@ -30,6 +29,6 @@ services:
       - CI=true
 
 networks:
-  default:
+  app_network:
     name: "${NETWORK}"
     external: true
