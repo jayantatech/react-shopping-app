@@ -93,8 +93,11 @@ docker image prune -af || true
 echo "Building docker image locally..."
 # docker build -t "${IMAGE_NAME}:latest" .
 
-docker buildx build \
-  --platform linux/amd64 \
+# docker buildx build \
+#   --platform linux/amd64 \
+#   -t "${IMAGE_NAME}:latest" .
+
+docker build \
   -t "${IMAGE_NAME}:latest" .
 
 
