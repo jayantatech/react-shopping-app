@@ -8,7 +8,7 @@ pipeline {
         DOCKER_IMAGE    = "${DOCKER_USERNAME}/${PROJECT_NAME}"
 
         // DEV environment
-        DEV_EC2_IP         = credentials("dev-ec2-ip")         // store IP in Jenkins credentials, not hardcoded
+        DEV_EC2_IP         = "52.55.68.230"        // store IP in Jenkins credentials, not hardcoded
         DEV_CONTAINER_NAME = "react-shopping-app-dev"
         DEV_PORT           = "3000:80"
         DEV_NETWORK        = "react_dev_network"
