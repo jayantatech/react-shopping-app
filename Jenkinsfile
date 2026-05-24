@@ -51,35 +51,38 @@ pipeline {
 
                 sshagent(["ec2-key"]) {
 
-                    sh """
-                        # Copy deploy script to EC2
-                        scp -o StrictHostKeyChecking=no deploy.bash ubuntu@${DEV_EC2_IP}:/home/ubuntu/deploy.bash
+                sh """
+                    # Copy deploy script to EC2
+                    scp -o StrictHostKeyChecking=no deploy.bash ubuntu@${DEV_EC2_IP}:/home/ubuntu/deploy.bash
 
-                        # Copy entire workspace to EC2
-                        scp -o StrictHostKeyChecking=no -r . ubuntu@${DEV_EC2_IP}:/home/ubuntu/workspace/
+                    # Create workspace directory on EC2 first
+                    ssh -o StrictHostKeyChecking=no ubuntu@${DEV_EC2_IP} 'mkdir -p /home/ubuntu/workspace'
 
-                        ssh -o StrictHostKeyChecking=no ubuntu@${DEV_EC2_IP} '
+                    # Now copy workspace to EC2
+                    scp -o StrictHostKeyChecking=no -r . ubuntu@${DEV_EC2_IP}:/home/ubuntu/workspace/
 
-                            chmod +x /home/ubuntu/deploy.bash
+                    ssh -o StrictHostKeyChecking=no ubuntu@${DEV_EC2_IP} '
 
-                            export WORKSPACE="/home/ubuntu/workspace"
-                            export JOB_NAME="${JOB_NAME}"
-                            export BRANCH_NAME="${BRANCH_NAME}"
-                            export BUILD_NUMBER="${BUILD_NUMBER}"
-                            export BUILD_ID="${BUILD_ID}"
-                            export BUILD_DISPLAY_NAME="${BUILD_DISPLAY_NAME}"
+                        chmod +x /home/ubuntu/deploy.bash
 
-                            docker network create ${DEV_NETWORK} 2>/dev/null || true
+                        export WORKSPACE="/home/ubuntu/workspace"
+                        export JOB_NAME="${JOB_NAME}"
+                        export BRANCH_NAME="${BRANCH_NAME}"
+                        export BUILD_NUMBER="${BUILD_NUMBER}"
+                        export BUILD_ID="${BUILD_ID}"
+                        export BUILD_DISPLAY_NAME="${BUILD_DISPLAY_NAME}"
 
-                            /home/ubuntu/deploy.bash \
-                            "${PROJECT_NAME}" \
-                            "${DOCKER_IMAGE}" \
-                            "${DEV_CONTAINER_NAME}" \
-                            "${DEV_NETWORK}" \
-                            "${DEV_PORT}" \
-                            "${DEV_SECRET_MANAGER}"
-                        '
-                    """
+                        docker network create ${DEV_NETWORK} 2>/dev/null || true
+
+                        /home/ubuntu/deploy.bash \
+                        "${PROJECT_NAME}" \
+                        "${DOCKER_IMAGE}" \
+                        "${DEV_CONTAINER_NAME}" \
+                        "${DEV_NETWORK}" \
+                        "${DEV_PORT}" \
+                        "${DEV_SECRET_MANAGER}"
+                    '
+                """
                 }
             }
         }
