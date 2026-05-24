@@ -86,16 +86,27 @@ docker rm -f "${CONTAINER_NAME}" 2>/dev/null || true
 
 
 echo "Removing old image..."
-docker rmi -f "${IMAGE_NAME}:latest" 2>/dev/null || true
+# docker rmi -f "${IMAGE_NAME}:latest" 2>/dev/null || true
+docker image prune -af || true
 
 
 echo "Building docker image locally..."
-docker build -t "${IMAGE_NAME}:latest" .
+# docker build -t "${IMAGE_NAME}:latest" .
+
+docker buildx build \
+  --platform linux/amd64 \
+  -t "${IMAGE_NAME}:latest" .
+
 
 echo "Starting new container..."
 # When secrets are enabled, swap the line below with the --env-file variant:
 # docker run -d --name "${CONTAINER_NAME}" -p "${PORT}" --env-file "${SAVE_FILE_PATH}/appConfig.env" "${IMAGE_NAME}:latest"
-docker run -d --name "${CONTAINER_NAME}" -p "${PORT}" "${IMAGE_NAME}:latest"
+docker run -d \
+  --name "${CONTAINER_NAME}" \
+  --network "${NETWORK}" \
+  -p "${PORT}" \
+  "${IMAGE_NAME}:latest"
+
 
 echo "Cleaning dangling images..."
 docker image prune -f
