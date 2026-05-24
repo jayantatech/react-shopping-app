@@ -52,13 +52,17 @@ pipeline {
                 sshagent(["ec2-key"]) {
 
                     sh """
+                        # Copy deploy script to EC2
                         scp -o StrictHostKeyChecking=no deploy.bash ubuntu@${DEV_EC2_IP}:/home/ubuntu/deploy.bash
+
+                        # Copy entire workspace to EC2
+                        scp -o StrictHostKeyChecking=no -r . ubuntu@${DEV_EC2_IP}:/home/ubuntu/workspace/
 
                         ssh -o StrictHostKeyChecking=no ubuntu@${DEV_EC2_IP} '
 
                             chmod +x /home/ubuntu/deploy.bash
 
-                            export WORKSPACE="${WORKSPACE}"
+                            export WORKSPACE="/home/ubuntu/workspace"
                             export JOB_NAME="${JOB_NAME}"
                             export BRANCH_NAME="${BRANCH_NAME}"
                             export BUILD_NUMBER="${BUILD_NUMBER}"
@@ -99,11 +103,13 @@ pipeline {
         //             sh """
         //                 scp -o StrictHostKeyChecking=no deploy.bash ubuntu@${QA_EC2_IP}:/home/ubuntu/deploy.bash
 
+        //                 scp -o StrictHostKeyChecking=no -r . ubuntu@${QA_EC2_IP}:/home/ubuntu/workspace/
+
         //                 ssh -o StrictHostKeyChecking=no ubuntu@${QA_EC2_IP} '
 
         //                     chmod +x /home/ubuntu/deploy.bash
 
-        //                     export WORKSPACE="${WORKSPACE}"
+        //                     export WORKSPACE="/home/ubuntu/workspace"
         //                     export JOB_NAME="${JOB_NAME}"
         //                     export BRANCH_NAME="${BRANCH_NAME}"
         //                     export BUILD_NUMBER="${BUILD_NUMBER}"
@@ -146,11 +152,13 @@ pipeline {
         //             sh """
         //                 scp -o StrictHostKeyChecking=no deploy.bash ubuntu@${PROD_EC2_IP}:/home/ubuntu/deploy.bash
 
+        //                 scp -o StrictHostKeyChecking=no -r . ubuntu@${PROD_EC2_IP}:/home/ubuntu/workspace/
+
         //                 ssh -o StrictHostKeyChecking=no ubuntu@${PROD_EC2_IP} '
 
         //                     chmod +x /home/ubuntu/deploy.bash
 
-        //                     export WORKSPACE="${WORKSPACE}"
+        //                     export WORKSPACE="/home/ubuntu/workspace"
         //                     export JOB_NAME="${JOB_NAME}"
         //                     export BRANCH_NAME="${BRANCH_NAME}"
         //                     export BUILD_NUMBER="${BUILD_NUMBER}"
