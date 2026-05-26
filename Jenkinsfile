@@ -51,49 +51,15 @@ pipeline {
 
                 sshagent(["ec2-key"]) {
 
-                // sh """
-                //     # Copy deploy script to EC2
-                //     scp -o StrictHostKeyChecking=no deploy.bash ubuntu@${DEV_EC2_IP}:/home/ubuntu/deploy.bash
-
-                //     # Create workspace directory on EC2 first
-                //     ssh -o StrictHostKeyChecking=no ubuntu@${DEV_EC2_IP} 'mkdir -p /home/ubuntu/workspace'
-
-                //     # Now copy workspace to EC2
-                //     scp -o StrictHostKeyChecking=no -r . ubuntu@${DEV_EC2_IP}:/home/ubuntu/workspace/
-
-                //     ssh -o StrictHostKeyChecking=no ubuntu@${DEV_EC2_IP} '
-
-                //         chmod +x /home/ubuntu/deploy.bash
-
-                //         export WORKSPACE="/home/ubuntu/workspace"
-                //         export JOB_NAME="${JOB_NAME}"
-                //         export BRANCH_NAME="${BRANCH_NAME}"
-                //         export BUILD_NUMBER="${BUILD_NUMBER}"
-                //         export BUILD_ID="${BUILD_ID}"
-                //         export BUILD_DISPLAY_NAME="${BUILD_DISPLAY_NAME}"
-
-                //         docker network create ${DEV_NETWORK} 2>/dev/null || true
-
-                //         /home/ubuntu/deploy.bash \
-                //         "${PROJECT_NAME}" \
-                //         "${DOCKER_IMAGE}" \
-                //         "${DEV_CONTAINER_NAME}" \
-                //         "${DEV_NETWORK}" \
-                //         "${DEV_PORT}" \
-                //         "${DEV_SECRET_MANAGER}"
-                //     '
-                // """
-                sh """
+            sh """
                 # Copy deploy script to EC2
                 scp -o StrictHostKeyChecking=no deploy.bash ubuntu@${DEV_EC2_IP}:/home/ubuntu/deploy.bash
 
-                # Clean up old workspace and recreate fresh
-                ssh -o StrictHostKeyChecking=no ubuntu@${DEV_EC2_IP} 'sudo rm -rf /home/ubuntu/workspace && mkdir -p /home/ubuntu/workspace'
+                # Create workspace directory on EC2 first
+                ssh -o StrictHostKeyChecking=no ubuntu@${DEV_EC2_IP} 'mkdir -p /home/ubuntu/workspace'
 
-                # Copy workspace to EC2 excluding .git
-                rsync -az --exclude='.git' --exclude='node_modules' \
-                    -e "ssh -o StrictHostKeyChecking=no" \
-                    . ubuntu@${DEV_EC2_IP}:/home/ubuntu/workspace/
+                # Now copy workspace to EC2
+                scp -o StrictHostKeyChecking=no -r . ubuntu@${DEV_EC2_IP}:/home/ubuntu/workspace/
 
                 ssh -o StrictHostKeyChecking=no ubuntu@${DEV_EC2_IP} '
 

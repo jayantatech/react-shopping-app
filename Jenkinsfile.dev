@@ -1,0 +1,232 @@
+pipeline {
+
+    agent any  
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+
+    environment {
+
+        // Global
+        OS_HOME      = '/home/ubuntu'
+        REGISTRY     = 'reg.aknserv.com'
+        BRANCH       = 'dev'
+
+        // App
+        PROJECT      = 'react_shopping_app_dev'
+        IMAGE_NAME   = 'react_shopping_app_dev'
+        CONTAINER    = 'react_shopping_app_dev'
+        IMAGE_TAG    = "${BRANCH}_${BUILD_NUMBER}"
+
+        // Docker
+        CONTAINER_PORT         = '80'
+        HOST_PORT              = '3000'
+
+        // Paths
+        BUILD_PATH   = "${OS_HOME}/BUILDS/${PROJECT}/${IMAGE_NAME}/${JOB_NAME}/${BRANCH}"
+        CONFIG_PATH  = "${OS_HOME}/container-configs/${BRANCH}/${IMAGE_NAME}"
+
+        // AWS
+        AWS_DEFAULT_REGION = 'ap-southeast-2'
+    }
+
+    stages {
+
+        stage('Prepare Build Directory') {
+
+            steps {
+
+                sh '''
+                    set -e
+
+                    echo "Preparing build directories..."
+
+                    sudo mkdir -p "${BUILD_PATH}"
+                    sudo mkdir -p "${CONFIG_PATH}"
+
+                    echo "Cleaning old build..."
+
+                    sudo rm -rf "${BUILD_PATH:?}"/*
+
+                    echo "Copying workspace..."
+
+                    sudo cp -R . "${BUILD_PATH}"
+
+                    sudo rm -rf "${BUILD_PATH}/.git"
+                '''
+            }
+        }
+
+        stage('Generate Build Metadata') {
+
+            steps {
+
+                sh '''
+                    set -e
+
+                    cd "${BUILD_PATH}"
+
+                    echo "Generating build metadata..."
+
+cat > build_config.json <<EOF
+{
+"BUILD_NUMBER": "${BUILD_NUMBER}",
+"BUILD_ID": "${BUILD_ID}",
+"BUILD_DISPLAY_NAME": "${BUILD_DISPLAY_NAME}",
+"JOB_NAME": "${JOB_NAME}",
+"BRANCH": "${BRANCH}",
+"REGISTRY": "${IMAGE_NAME}",
+"IMAGE_TAG": "${IMAGE_TAG}",
+"RUNTIME": "${CONTAINER}",
+"BUILD_TIME": "$(date '+%Y-%m-%d %H:%M:%S')"
+}
+EOF
+
+                    echo "Generated build_config.json"
+
+                    cat build_config.json
+
+                    echo "Validating JSON..."
+
+                    python3 -m json.tool build_config.json > /dev/null
+
+                    echo "JSON validation successful."
+                '''
+            }
+        }
+
+        // Uncomment when secrets are required
+
+        // stage('Load Environment Secrets') {
+
+        //     steps {
+
+        //         withCredentials([
+        //             [
+        //                 $class: 'AmazonWebServicesCredentialsBinding',
+        //                 credentialsId: 'aws-dev-creds'
+        //             ]
+        //         ]) {
+
+        //             sh '''
+        //                 set -e
+
+        //                 cd "${BUILD_PATH}"
+
+        //                 SECRET_JSON=$(aws secretsmanager get-secret-value \
+        //                     --secret-id "${SECRET_MANAGER}" \
+        //                     --query SecretString \
+        //                     --output text)
+
+        //                 echo "Creating env file..."
+
+        //                 echo "${SECRET_JSON}" | jq -r \
+        //                 'to_entries | map("\\(.key)=\\(.value|tostring)") | .[]' \
+        //                 > appConfig.env
+        //             '''
+        //         }
+        //     }
+        // }
+
+        stage('Docker Build') {
+
+            steps {
+
+                sh '''
+                    set -e
+
+                    cd "${BUILD_PATH}"
+
+                    echo "Stopping old container..."
+
+                    docker rm -f "${CONTAINER}" 2>/dev/null || true
+
+                    echo "Removing old image..."
+
+                    docker rmi -f "${IMAGE_NAME}:latest" 2>/dev/null || true
+
+                    echo "Building docker image..."
+
+                    docker build -t "${IMAGE_NAME}:${IMAGE_TAG}" .
+
+                    echo "Docker image built successfully."
+
+                    echo "Cleaning dangling images..."
+
+                    docker image prune -f
+                '''
+            }
+        }
+
+        stage('Deploy Container') {
+
+            steps {
+
+                sh '''
+                    set -e
+
+                    cd "${BUILD_PATH}"
+
+                    echo "Stopping old container..."
+
+                    docker rm -f "${CONTAINER}" 2>/dev/null || true
+
+                    echo "Checking existing port usage..."
+
+                    EXISTING_CONTAINER=$(docker ps -aq --filter "publish=${HOST_PORT}")
+
+                    if [ -n "$EXISTING_CONTAINER" ]; then
+                        echo "Removing existing container using port ${HOST_PORT}..."
+                        docker rm -f "$EXISTING_CONTAINER"
+                    fi
+
+                    echo "Starting container..."
+
+                    docker run -d \
+                    --name "${CONTAINER}" \
+                    -p "${HOST_PORT}:${CONTAINER_PORT}" \
+                    --restart unless-stopped \
+                    "${IMAGE_NAME}:${IMAGE_TAG}"
+
+                    echo "Running containers..."
+
+                    docker ps -a
+                '''
+            }
+        }
+
+        stage('Cleanup') {
+
+            steps {
+
+                sh '''
+                    echo "Cleaning dangling images..."
+
+                    docker image prune -f
+                '''
+            }
+        }
+    }
+
+    post {
+
+        success {
+            echo 'DEV deployment completed successfully'
+        }
+
+        failure {
+            echo 'DEV deployment failed'
+        }
+
+        always {
+
+            sh '''
+                echo "Docker container status:"
+                docker ps -a || true
+            '''
+        }
+    }
+}
