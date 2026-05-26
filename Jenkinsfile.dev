@@ -109,7 +109,14 @@ EOF
 
                     echo "Removing old image..."
 
-                    docker rmi -f "${IMAGE_NAME}:latest" 2>/dev/null || true
+                    // docker rmi -f "${IMAGE_NAME}:latest" 2>/dev/null || true
+                    # Remove ALL old images with same name
+                    docker images --format "{{.Repository}}:{{.Tag}}" \
+                    | grep "^${IMAGE_NAME}:" \
+                    | xargs -r docker rmi -f || true
+
+                    # Then build the new one
+                    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
 
                     echo "Building docker image..."
 
