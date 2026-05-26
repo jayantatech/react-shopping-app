@@ -60,16 +60,16 @@ pipeline {
             }
         }
 
-        stage('Generate Build Metadata') {
+stage('Generate Build Metadata') {
 
-            steps {
+    steps {
 
-                sh '''
-                    set -e
+        sh '''
+            set -e
 
-                    cd "${BUILD_PATH}"
+            cd "${BUILD_PATH}"
 
-                    echo "Generating build metadata..."
+            echo "Generating build metadata..."
 
 cat > build_config.json <<EOF
 {
@@ -85,18 +85,16 @@ cat > build_config.json <<EOF
 }
 EOF
 
-                    echo "Generated build_config.json"
+            echo "Generated build_config.json"
 
-                    cat build_config.json
+            cat build_config.json
 
-                    echo "Validating JSON..."
+            echo "Validating JSON..."
 
-                    python3 -m json.tool build_config.json > /dev/null
-
-                    echo "JSON validation successful."
-                '''
-            }
-        }
+            node -e "JSON.parse(require('fs').readFileSync('build_config.json','utf8')); console.log('JSON validation successful.');"
+        '''
+    }
+}
 
         stage('Docker Build') {
 
