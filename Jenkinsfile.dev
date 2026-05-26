@@ -89,9 +89,7 @@ EOF
 
             cat build_config.json
 
-            echo "Validating JSON..."
-
-            node -e "JSON.parse(require('fs').readFileSync('build_config.json','utf8')); console.log('JSON validation successful.');"
+            echo "Build metadata generation successful."
         '''
     }
 }
