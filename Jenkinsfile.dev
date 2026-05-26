@@ -23,7 +23,7 @@ pipeline {
 
         // Docker
         CONTAINER_PORT = '80'
-        HOST_PORT      = '3000'
+        HOST_PORT      = '80'
 
         // Paths
         BUILD_PATH   = "${OS_HOME}/BUILDS/${PROJECT}/${IMAGE_NAME}/${JOB_NAME}/${BRANCH}"
