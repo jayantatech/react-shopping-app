@@ -79,7 +79,7 @@ export default function App() {
               color: "#111827",
             }}
           >
-             jayanta and he is good
+             jayanta and he is good for dev by jay
           </h2>
 
           <p
